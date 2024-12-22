@@ -1,35 +1,50 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import {useEffect, useState} from 'react'
+import initData from '../data.json'
 import './App.css'
+import useLocalStorage from "./components/hooks/useLocalStorage.js";
+import ContactForm from "./components/ContactForm/ContactForm.jsx";
+import ContactList from "./components/ContactList/ContactList.jsx";
+import SearchBox from "./components/SearchBox/SearchBox.jsx";
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+	const [dataContacts, setDataContacts] = useState(() => {
+		let data = useLocalStorage.getValue("dataContacts");
+		
+		if (data !== null) {
+			return JSON.parse(data);
+		}
+		
+		return initData;
+	});
+	const [searchValue, setSearchValue] = useState('');
+	
+	const updateDataContacts = ({name, number}) => {
+		setDataContacts((prevState) => {
+			return [...prevState, {id: new Date(), name: name, number: number}];
+		});
+	}
+	
+	const deleteDataContacts = ({id}) => {
+		setDataContacts((prevState) => {
+			return prevState.filter(contact => contact.id !== id);
+		});
+	}
+	
+	let FilteredDataBySearchValue = dataContacts.filter(contact => {
+		return contact.name.toLowerCase().includes(searchValue.toLowerCase()) || contact.number.includes(searchValue)
+	});
+	
+	useEffect(() => {
+		useLocalStorage.setValue("dataContacts", dataContacts);
+	}, [dataContacts]);
+	
+	return (<div className="container">
+		<h1>Phonebook</h1>
+		<ContactForm formData={dataContacts} onFormSubmit={updateDataContacts}/>
+		<SearchBox value={searchValue} onFilter={setSearchValue}/>
+		<ContactList data={FilteredDataBySearchValue} onDeleteContact={deleteDataContacts}/>
+	
+	</div>)
 }
 
 export default App
